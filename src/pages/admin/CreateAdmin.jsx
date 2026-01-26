@@ -4,96 +4,95 @@ import { API_BASE_URL } from '../../services/auth';
 import { X } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 
-const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true }) => {
+const CreateAdmin = ({ isOpen, onClose, onAdminCreated }) => {
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
     phone_number: '',
-    role: "admin"
+    role: 'admin',
+    password: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { Error } = useNotification();
+  const { showSuccess, showError } = useNotification();
 
-  // Update form data when user changes
+  // Reset form when modal opens
   useEffect(() => {
-    if (user) {
+    if (isOpen) {
       setFormData({
-        full_name: user.name || '',
-        email: user.email || '',
-        phone_number: user.phone_number || '',
-        role: user.role || 'admin'
+        full_name: '',
+        email: '',
+        phone_number: '',
+        role: 'admin',
+        password: ''
       });
+      setError(null);
     }
-  }, [user]);
+  }, [isOpen]);
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return;
+    if (!isOpen) return;
+
+    // Validation
+    if (!formData.full_name.trim()) {
+      setError('Full name is required');
+      return;
+    }
+    if (!formData.email.trim()) {
+      setError('Email is required');
+      return;
+    }
+    if (!formData.password.trim()) {
+      setError('Password is required');
+      return;
+    }
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
 
     try {
       setLoading(true);
       setError(null);
 
+      const payload = {
+        full_name: formData.full_name,
+        email: formData.email,
+        phone_number: formData.phone_number,
+        role: formData.role,
+        password: formData.password
+      };
 
-
-      if (useLocalUpdate) {
-        // Update local data without API call
-        
-        const updatedUserData = {
-          id: user.id,
-          full_name: formData.full_name || '',
-          email: formData.email || '',
-          phone_number: formData.phone_number || '',
-          role: formData.role || 'admin'
-        };
-
-
-        onUserUpdate(updatedUserData);
-        onClose();
-        return;
-      }
-
-      // API update logic (existing code)
-      const formDataPayload = new FormData();
-      formDataPayload.append('user_id', user.id.toString());
-      formDataPayload.append('full_name', formData.full_name || '');
-      
-      // Only include email if it has actually changed to avoid duplicate email validation
-      if (formData.email && formData.email !== user.email) {
-        formDataPayload.append('email', formData.email);
-      }
-      
-      formDataPayload.append('phone_number', formData.phone_number || '');
-      formDataPayload.append('role', formData.role || 'admin');
-
-
-
-      const response = await fetch(`${API_BASE_URL}/dashboard/administrators/${user.id}/`, {
-        method: 'PATCH',
+      const response = await fetch(`${API_BASE_URL}/dashboard/administrators/create/`, {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json'
         },
-        body: formDataPayload,
+        body: JSON.stringify(payload),
       });
       
       if (!response.ok) {
-        // Try to get more detailed error information
         let errorData;
         try {
           errorData = await response.json();
           
-          // Handle validation errors more gracefully
+          // Handle validation errors
           if (errorData.email && Array.isArray(errorData.email)) {
-            throw new Error(`Email validation error: ${errorData.email.join(', ')}`);
+            throw new Error(`${errorData.email.join(', ')}`);
+          }
+          
+          if (errorData.password && Array.isArray(errorData.password)) {
+            throw new Error(`${errorData.password.join(', ')}`);
           }
           
           // Handle other field validation errors
@@ -105,33 +104,35 @@ const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true 
           });
           
           if (validationErrors.length > 0) {
-            throw new Error(`Validation errors: ${validationErrors.join('; ')}`);
+            throw new Error(validationErrors.join('; '));
           }
           
-          // If no specific validation errors, use general message
-          throw new Error(errorData.message || errorData.detail || `HTTP error! status: ${response.status}`);
+          throw new Error(errorData.message || errorData.detail || `Failed to create administrator`);
           
         } catch (parseError) {
-          // If JSON parsing fails, don't try to read as text since we already consumed the stream
-          if (parseError.message.includes('Validation errors') || parseError.message.includes('Email validation error')) {
-            throw parseError; // Re-throw our custom validation error
+          if (parseError.message && !parseError.message.includes('JSON')) {
+            throw parseError;
           }
-          throw new Error(`HTTP error! status: ${response.status} - Unable to parse error response`);
+          throw new Error(`Failed to create administrator. Status: ${response.status}`);
         }
       }
 
-      const updatedUser = await response.json();
+      const newAdmin = await response.json();
       
-      // Ensure the updated user has the ID for proper list updating
-      const updatedUserWithId = {
-        ...updatedUser,
-        id: user.id
-      };
+      if (showSuccess) {
+        showSuccess('Administrator created successfully');
+      }
       
-      onUserUpdate(updatedUserWithId);
+      if (onAdminCreated) {
+        onAdminCreated(newAdmin);
+      }
+      
       onClose();
     } catch (error) {
       setError(error.message);
+      if (showError) {
+        showError(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -139,6 +140,13 @@ const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true 
 
   const handleClose = () => {
     setError(null);
+    setFormData({
+      full_name: '',
+      email: '',
+      phone_number: '',
+      role: 'admin',
+      password: ''
+    });
     onClose();
   };
 
@@ -148,7 +156,7 @@ const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true 
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Edit Administrator</h3>
+          <h3 className="text-lg font-medium text-gray-900">Create Administrator</h3>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -167,7 +175,7 @@ const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true 
           <div className="space-y-4">
             <div>
               <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
+                Full Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -177,13 +185,13 @@ const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true 
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter full name"
-                // disabled
+                required
               />
             </div>
             
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -194,7 +202,6 @@ const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true 
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter email address"
                 required
-                // disabled
               />
             </div>
             
@@ -210,13 +217,28 @@ const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true 
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter phone number"
-                // disabled
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter password"
+                required
               />
             </div>
 
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                Role
+                Role <span className="text-red-500">*</span>
               </label>
               <select
                 id="role"
@@ -229,20 +251,6 @@ const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true 
                 <option value="superadmin">Super Admin</option>
               </select>
             </div>
-            
-            {/* <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="is_active"
-                name="is_active"
-                checked={formData.is_active}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
-                Active Status
-              </label>
-            </div> */}
           </div>
           
           <div className="flex gap-3 mt-6">
@@ -260,7 +268,7 @@ const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true 
               className="flex-1"
               disabled={loading}
             >
-              {loading ? 'Updating...' : 'Update User'}
+              {loading ? 'Creating...' : 'Create Admin'}
             </Button>
           </div>
         </form>
@@ -269,4 +277,4 @@ const EditAdmin = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true 
   );
 };
 
-export default EditAdmin;
+export default CreateAdmin;

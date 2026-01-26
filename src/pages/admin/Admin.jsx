@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Table from '../../components/ui/Table';
 import EditUser from './EditAdmin';
+import CreateAdmin from './CreateAdmin';
 import api,{ API_BASE_URL } from '../../services/auth';
 import { 
   Plus, 
@@ -26,6 +27,7 @@ const Users = () => {
 
   // for user edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   // Get notification function at component level
@@ -175,24 +177,27 @@ const Users = () => {
               </div> */}
             </div>
 
-            {/* <Button className="flex items-center">
+            <Button 
+            className="flex items-center"
+            onClick={() => setIsCreateModalOpen(true)}
+            >
               <Plus className="h-4 w-4 mr-2" />
-              Add User
-            </Button> */}
+              Create Administrator
+            </Button>
           </div>
         </Card>
 
-        {/* Users Table */}
+        {/* Administrators Table */}
         <Card>
           {loading ? (
             <div className="text-center py-12">
-              <div className="text-sm text-gray-500">Loading users...</div>
+              <div className="text-sm text-gray-500">Loading administrators...</div>
             </div>
           ) : (
             <Table>
               <Table.Head>
                 <Table.Row>
-                  <Table.Header>User Information</Table.Header>
+                  <Table.Header>Administrator Information</Table.Header>
                   <Table.Header>Phone Number</Table.Header>
                   <Table.Header>E-mail</Table.Header>
                   {/* <Table.Header>Status</Table.Header> */}
@@ -276,6 +281,12 @@ const Users = () => {
           user={selectedUser}
           onUserUpdate={handleUserUpdate}
           useLocalUpdate={false}
+        />
+        {/* Create User Modal */}
+        <CreateAdmin
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onUserUpdate={handleUserUpdate}
         />
       </div>
     </Layout>

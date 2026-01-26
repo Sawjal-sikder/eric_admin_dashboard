@@ -11,25 +11,32 @@ import {
   ArrowUpRight,
   BarChart3
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 const Dashboard = () => {
   const [data, setData] = useState({
     total_users: 0,
-    total_active_users: 0,
-    recent_users: [],
-    total_subscriptions: 0,
-    total_pending_subscriptions: 0,
-    total_trial_subscriptions: 0,
-    total_active_subscriptions: 0,
-    total_subscription_plans: 0,
-    recent_subscriptions_data: []
+    active_users: 0,
+    individual_users: 0,
+    company_users: 0,
   });
+  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chartLoading, setChartLoading] = useState(true);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/auth/dashboard/`, {
+      const response = await fetch(`${API_BASE_URL}/dashboard/overview/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -41,8 +48,12 @@ const Dashboard = () => {
         throw new Error('Network response was not ok');
       }
       const result = await response.json();
-      // console.log('Fetched dashboard data:', result);
-      setData(result);
+      
+      if (result.success && result.data) {
+        setData(result.data);
+      } else {
+        setData(result);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -50,9 +61,44 @@ const Dashboard = () => {
     }
   };
 
-  // Fetch users on component mount
+  const fetchChartData = async () => {
+    try {
+      setChartLoading(true);
+      const response = await fetch(`${API_BASE_URL}/dashboard/user-insights/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const result = await response.json();
+      
+      if (result.success && result.user_insights) {
+        // Transform the data for recharts
+        const transformedData = Object.entries(result.user_insights)
+          .map(([month, values]) => ({
+            month: month,
+            individuals: values.individuals,
+            company: values.company,
+          }))
+          .reverse(); // Reverse to show oldest first
+        
+        setChartData(transformedData);
+      }
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchChartData();
   }, []);
 
 
@@ -79,12 +125,6 @@ const Dashboard = () => {
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
                 <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.total_users || 0}</p>
               </div>
-              {/* <div className="flex items-center">
-                <span className="inline-flex items-center text-sm font-medium text-green-600">
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  {loading ? '...' : data.total_active_users || 0} active
-                </span>
-              </div> */}
             </div>
           </Card>
 
@@ -96,15 +136,9 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600">Subscription Plans</p>
-                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.total_subscription_plans || 0}</p>
+                <p className="text-sm font-medium text-gray-600">Total Active Users</p>
+                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.active_users || 0}</p>
               </div>
-              {/* <div className="flex items-center">
-                <span className="inline-flex items-center text-sm font-medium text-gray-600">
-                  <Package className="w-4 h-4 mr-1" />
-                  Plans
-                </span>
-              </div> */}
             </div>
           </Card>
 
@@ -116,15 +150,9 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Subscriptions</p>
-                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.total_subscriptions || 0}</p>
+                <p className="text-sm font-medium text-gray-600">Total Company Users</p>
+                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.company_users || 0}</p>
               </div>
-              {/* <div className="flex items-center">
-                <span className="inline-flex items-center text-sm font-medium text-green-600">
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  {loading ? '...' : data.total_active_subscriptions || 0} active
-                </span>
-              </div> */}
             </div>
           </Card>
 
@@ -136,134 +164,89 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600">Active Subscriptions</p>
-                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.total_active_subscriptions || 0}</p>
+                <p className="text-sm font-medium text-gray-600">Individual Users</p>
+                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.individual_users || 0}</p>
               </div>
-              {/* <div className="flex items-center">
-                <span className="inline-flex items-center text-sm font-medium text-blue-600">
-                  <BarChart3 className="w-4 h-4 mr-1" />
-                  Trial
-                </span>
-              </div> */}
             </div>
           </Card>
-
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Users */}
-          <Card>
-            <Card.Header>
-              <div className="flex items-center justify-between">
-                <Card.Title>Recent Users</Card.Title>
-                <button
-                  className="text-primary-600 hover:text-primary-500 text-sm font-medium flex items-center"
-                  onClick={() => window.location.href = '/users'}
-                  type="button"
+        {/* Bar Chart */}
+        <Card className="mb-8">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">User Insights</h2>
+                <p className="text-sm text-gray-600">Monthly breakdown of individual and company users</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                  <span className="text-sm text-gray-600">Individuals</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                  <span className="text-sm text-gray-600">Company</span>
+                </div>
+              </div>
+            </div>
+            
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-80">
+                <p className="text-gray-500">Loading chart...</p>
+              </div>
+            ) : chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart
+                  data={chartData}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
                 >
-                  View all
-                  <ArrowUpRight className="w-4 h-4 ml-1" />
-                </button>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    axisLine={{ stroke: '#e5e7eb' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    axisLine={{ stroke: '#e5e7eb' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    }}
+                  />
+                  <Legend />
+                  <Bar 
+                    dataKey="individuals" 
+                    name="Individuals"
+                    fill="#3b82f6" 
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar 
+                    dataKey="company" 
+                    name="Company"
+                    fill="#22c55e" 
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-80">
+                <p className="text-gray-500">No data available</p>
               </div>
-            </Card.Header>
-            <Card.Content>
-              <div className="space-y-4">
-                {loading ? (
-                  <div className="text-center py-4">Loading...</div>
-                ) : data.recent_users && data.recent_users.length > 0 ? (
-                  data.recent_users.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600">
-                            {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{user.full_name || 'N/A'}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
-                          <p className="text-xs text-gray-400">{user.phone_number}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.is_active 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {user.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-4 text-gray-500">No recent users found</div>
-                )}
-              </div>
-            </Card.Content>
-          </Card>
-          <Card>
-            <Card.Header>
-              <div className="flex items-center justify-between">
-                <Card.Title>Recent Subscriptions</Card.Title>
-                <button
-                  className="text-primary-600 hover:text-primary-500 text-sm font-medium flex items-center"
-                  onClick={() => window.location.href = '/subscription_list'}
-                  type="button"
-                >
-                  View all
-                  <ArrowUpRight className="w-4 h-4 ml-1" />
-                </button>
-              </div>
-            </Card.Header>
-            <Card.Content>
-              <div className="space-y-4">
-                {loading ? (
-                  <div className="text-center py-4">Loading...</div>
-                ) : data.recent_subscriptions_data && data.recent_subscriptions_data.length > 0 ? (
-                  data.recent_subscriptions_data.map((subscription) => (
-                    <div key={subscription.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <Package className="w-5 h-5 text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{subscription.user}</p>
-                          <p className="text-sm text-gray-500">{subscription.plan}</p>
-                          <p className="text-xs text-gray-400">
-                            Auto-renew: {subscription.auto_renew ? 'Yes' : 'No'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500 mb-1">
-                          {new Date(subscription.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </p>
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          subscription.status === 'active' 
-                            ? 'bg-green-100 text-green-800'
-                            : subscription.status === 'trialing'
-                            ? 'bg-blue-100 text-blue-800'
-                            : subscription.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-4 text-gray-500">No recent subscriptions found</div>
-                )}
-              </div>
-            </Card.Content>
-          </Card>
-        </div>
+            )}
+          </div>
+        </Card>
+
       </div>
     </Layout>
   );

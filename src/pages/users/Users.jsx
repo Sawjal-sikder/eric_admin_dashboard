@@ -20,6 +20,7 @@ import { useNotification } from '../../contexts/NotificationContext';
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterUserType, setFilterUserType] = useState('all');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,13 +38,14 @@ const Users = () => {
       id: apiUser.id,
       name: apiUser.full_name || 'N/A',
       email: apiUser.email,
-      role: 'User', // Default role, you can modify based on your API response
+      role: 'User',
       status: apiUser.is_active ? 'Active' : 'Inactive',
-      lastLogin: 'N/A', // Add this field to your API if needed
-      joinDate: 'N/A', // Add this field to your API if needed
+      lastLogin: 'N/A',
+      joinDate: 'N/A',
       phone_number: apiUser.phone_number,
       profile_picture: apiUser.profile_picture,
-      is_active: apiUser.is_active
+      is_active: apiUser.is_active,
+      user_type: apiUser.user_type || 'User'
     };
   };
 
@@ -54,7 +56,9 @@ const Users = () => {
       setError(null);
       const response = await api.get(`/dashboard/user-management/`);
       const data = response.data;
-      const rawUsersData = Array.isArray(data) ? data : data.users || data.data || data.results || [];
+      
+      // Handle paginated response - results is the key
+      const rawUsersData = data.results || (Array.isArray(data) ? data : data.users || data.data || []);
       const transformedUsers = rawUsersData.map(transformUserData);      
       setUsers(transformedUsers);
     } catch (error) {
@@ -76,7 +80,8 @@ const Users = () => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || user.status.toLowerCase() === filterStatus.toLowerCase();
-    return matchesSearch && matchesStatus;
+    const matchesUserType = filterUserType === 'all' || user.user_type.toLowerCase() === filterUserType.toLowerCase();
+    return matchesSearch && matchesStatus && matchesUserType;
   });
 
   const getStatusBadge = (status) => {
@@ -95,6 +100,19 @@ const Users = () => {
       User: 'bg-gray-100 text-gray-800',
     };
     return roleStyles[role] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getUserTypeBadge = (userType) => {
+    const typeStyles = {
+      individuals: 'bg-blue-100 text-blue-800',
+      company: 'bg-purple-100 text-purple-800',
+    };
+    return typeStyles[userType] || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatUserType = (userType) => {
+    if (!userType) return 'User';
+    return userType.charAt(0).toUpperCase() + userType.slice(1);
   };
 
   const handleRefresh = () => {
@@ -173,6 +191,19 @@ const Users = () => {
                   <option value="pending">Pending</option>
                 </select>
               </div>
+
+              <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-gray-400" />
+                <select
+                  className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+                  value={filterUserType}
+                  onChange={(e) => setFilterUserType(e.target.value)}
+                >
+                  <option value="all">All User Types</option>
+                  <option value="individuals">Individuals</option>
+                  <option value="company">Company</option>
+                </select>
+              </div>
             </div>
 
             {/* <Button className="flex items-center">
@@ -195,6 +226,7 @@ const Users = () => {
                   <Table.Header>User Information</Table.Header>
                   <Table.Header>Phone Number</Table.Header>
                   <Table.Header>E-mail</Table.Header>
+                  <Table.Header>User Type</Table.Header>
                   <Table.Header>Status</Table.Header>
                   <Table.Header>Actions</Table.Header>
                 </Table.Row>
@@ -216,13 +248,18 @@ const Users = () => {
                       </div>
                     </Table.Cell>
                     <Table.Cell>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadge(user.role)}`}>
-                        {user.phone_number || "*****-********"}
+                      <span className="text-sm text-gray-900">
+                        {user.phone_number || "-"}
                       </span>
                     </Table.Cell>
                     <Table.Cell>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadge(user.role)}`}>
+                      <span className="text-sm text-gray-900">
                         {user.email || "-"}
+                      </span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getUserTypeBadge(user.user_type)}`}>
+                        {formatUserType(user.user_type)}
                       </span>
                     </Table.Cell>
                     <Table.Cell>

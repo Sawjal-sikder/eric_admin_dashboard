@@ -21,6 +21,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import RuleAnalysis from './RuleAnalysis';
 
 const Dashboard = () => {
   const [data, setData] = useState({
@@ -246,6 +247,8 @@ const Dashboard = () => {
             )}
           </div>
         </Card>
+
+                <Card className="mb-8"> <RuleAnalysis /> </Card>
 
       </div>
     </Layout>

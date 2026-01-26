@@ -9,6 +9,7 @@ const EditUser = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true }
     full_name: '',
     email: '',
     phone_number: '',
+    user_type: 'individuals',
     is_active: true
   });
   const [loading, setLoading] = useState(false);
@@ -19,9 +20,10 @@ const EditUser = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true }
   useEffect(() => {
     if (user) {
       setFormData({
-        full_name: user.name || '',
+        full_name: user.name || user.full_name || '',
         email: user.email || '',
         phone_number: user.phone_number || '',
+        user_type: user.user_type || 'individuals',
         is_active: user.is_active !== undefined ? user.is_active : user.status === 'Active'
       });
     }
@@ -43,19 +45,16 @@ const EditUser = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true }
       setLoading(true);
       setError(null);
 
-
-
       if (useLocalUpdate) {
         // Update local data without API call
-        
         const updatedUserData = {
           id: user.id,
           full_name: formData.full_name || '',
           email: formData.email || '',
           phone_number: formData.phone_number || '',
+          user_type: formData.user_type || 'individuals',
           is_active: formData.is_active
         };
-
 
         onUserUpdate(updatedUserData);
         onClose();
@@ -73,11 +72,10 @@ const EditUser = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true }
       }
       
       formDataPayload.append('phone_number', formData.phone_number || '');
+      formDataPayload.append('user_type', formData.user_type || 'individuals');
       formDataPayload.append('is_active', formData.is_active ? 'True' : 'False');
 
-
-
-      const response = await fetch(`${API_BASE_URL}/user/profile/${user.id}/`, {
+      const response = await fetch(`${API_BASE_URL}/dashboard/user-management/${user.id}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -212,6 +210,22 @@ const EditUser = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true }
                 placeholder="Enter phone number"
                 disabled
               />
+            </div>
+            
+            <div>
+              <label htmlFor="user_type" className="block text-sm font-medium text-gray-700 mb-1">
+                User Type
+              </label>
+              <select
+                id="user_type"
+                name="user_type"
+                value={formData.user_type}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="individuals">Individuals</option>
+                <option value="company">Company</option>
+              </select>
             </div>
             
             <div className="flex items-center">

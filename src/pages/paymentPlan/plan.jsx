@@ -41,7 +41,11 @@ const Strategies = () => {
     return {
       id: apiData.id,
       name: apiData.name || 'N/A',
-      description: apiData.description || 'N/A',
+      monthly_amount: apiData.monthly_amount,
+      annual_amount: apiData.annual_amount,
+      interval: apiData.interval || 'N/A',
+      currency: apiData.currency || 'N/A',
+      is_active: apiData.is_active,
     };
   };
 
@@ -51,7 +55,7 @@ const Strategies = () => {
       setLoading(true);
       setError(null);
 
-      const response = await axios.get(`${API_BASE_URL}/ai/trade/strategies/`, {
+      const response = await axios.get(`${API_BASE_URL}/payment/plans/`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -80,7 +84,8 @@ const Strategies = () => {
 
   const filteredData = datas.filter(data => {
     const matchesSearch = (data.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                         (data.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+                         (data.interval?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (data.currency?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -121,9 +126,9 @@ const Strategies = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Trade Strategies</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Subscription Plan</h1>
               <p className="mt-1 text-sm text-gray-600">
-                Manage and monitor trade strategies used in AI trading.
+                Manage and monitor subscription plans for Ai video generation.
               </p>
             </div>
           </div>
@@ -147,7 +152,7 @@ const Strategies = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search Trade Strategies..."
+                  placeholder="Search subscription plans..."
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -155,7 +160,7 @@ const Strategies = () => {
               </div>
               <Button className="flex items-center" disabled={loading} onClick={() => setCreateModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Strategy
+              Add Plan
             </Button>
             </div>
           </div>
@@ -172,8 +177,12 @@ const Strategies = () => {
               <Table.Head>
                 <Table.Row>
                   <Table.Header width="w-16">ID</Table.Header>
-                  <Table.Header width="w-1/3">Name of Trade strategy</Table.Header>
-                  <Table.Header width="w-1/2">Description of Trade strategy</Table.Header>
+                  <Table.Header>Name</Table.Header>
+                  <Table.Header>Monthly</Table.Header>
+                  <Table.Header>Annual</Table.Header>
+                  <Table.Header>Interval</Table.Header>
+                  <Table.Header>Currency</Table.Header>
+                  <Table.Header>Status</Table.Header>
                   <Table.Header width="w-24">Actions</Table.Header>
                 </Table.Row>
               </Table.Head>
@@ -184,38 +193,34 @@ const Strategies = () => {
                       <div className="text-sm font-medium text-gray-900">{data.id}</div>
                     </Table.Cell>
                     <Table.Cell>
-                      <div className="flex items-center space-x-3">
-                        {/* <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600">
-                            {data.name.charAt(0)}
-                          </span>
-                        </div> */}
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{data.name || "-"}</div>
-                        </div>
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{data.name || "-"}</div>
                     </Table.Cell>
                     <Table.Cell>
-                      <div className="text-sm text-gray-900 w-full whitespace-normal break-words">
-
-                        {data.description || "-"}
-                      </div>
+                      <div className="text-sm text-gray-900">{data.monthly_amount ? `$${data.monthly_amount}` : "-"}</div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="text-sm text-gray-900">{data.annual_amount ? `$${data.annual_amount}` : "-"}</div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="text-sm text-gray-900 capitalize">{data.interval || "-"}</div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="text-sm text-gray-900 uppercase">{data.currency || "-"}</div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${data.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {data.is_active ? 'Active' : 'Inactive'}
+                      </span>
                     </Table.Cell>
                     <Table.Cell>
                       <div className="flex items-center space-x-2">
-                        {/* <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button> */}
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleEditData(data)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        {/* <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button> */}
                         <Button variant="ghost" size="sm"
                         onClick={() => handleDeleteData(data.id)}
                         >
@@ -231,7 +236,7 @@ const Strategies = () => {
 
           {!loading && filteredData.length === 0 && (
             <div className="text-center py-12">
-              <div className="text-sm text-gray-500">No strategies found</div>
+              <div className="text-sm text-gray-500">No subscription plans found</div>
             </div>
           )}
         </Card>

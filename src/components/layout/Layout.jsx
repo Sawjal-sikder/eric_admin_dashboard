@@ -25,7 +25,7 @@ const navigation = [
   { name: 'Administrators', href: '/administrators', icon: Users },
   // { name: 'Tenant Management', href: '/tenant_management', icon: Folder },
   // { name: 'User Feedback', href: '/user_feedback', icon: Folder },
-  // { name: 'Subscription', href: '/subscription_list', icon: CreditCard },
+  { name: 'Subscription Plan', href: '/subscription_plan', icon: CreditCard },
   // { name: 'Trading Strategies', href: '/tradeing-strategies', icon: TrendingUp },
   // { name: 'Categories', href: '/categories', icon: Folder },
   // { name: 'Products', href: '/products', icon: ShoppingBag },

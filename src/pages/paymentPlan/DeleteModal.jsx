@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../services/auth';
 import { AlertTriangle, X } from 'lucide-react';
 
-const DeleteStyle = ({ isOpen, onClose, dataId, onDataDelete }) => {
+const DeletePlan = ({ isOpen, onClose, dataId, onDataDelete }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -14,21 +14,19 @@ const DeleteStyle = ({ isOpen, onClose, dataId, onDataDelete }) => {
     setError(null);
 
     try {
-      await axios.delete(`${API_BASE_URL}/ai/trade/strategies/${dataId}/`, {
+      await axios.delete(`${API_BASE_URL}/payment/plans/${dataId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },
       });
 
-      // Call the callback to refresh the styles list
       onDataDelete(dataId);
       onClose();
     } catch (error) {
-      console.error('Error deleting style:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          error.message || 
-                          'Failed to delete style';
+      const errorMessage = error.response?.data?.message ||
+                          error.response?.data?.detail ||
+                          error.message ||
+                          'Failed to delete plan';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -55,8 +53,8 @@ const DeleteStyle = ({ isOpen, onClose, dataId, onDataDelete }) => {
             </div>
             <div>
               <h3 className="text-lg font-medium text-gray-900">
-                Delete Trading Style
-                <p className="text-sm text-gray-500">Trade style ID: {dataId}</p>
+                Delete Plan
+                <p className="text-sm text-gray-500">Plan ID: {dataId}</p>
               </h3>
             </div>
           </div>
@@ -72,9 +70,9 @@ const DeleteStyle = ({ isOpen, onClose, dataId, onDataDelete }) => {
         {/* Content */}
         <div className="p-6">
           <div className="text-sm text-gray-500 mb-4">
-            Are you sure you want to delete this trading style? This action cannot be undone.
+            Are you sure you want to delete this subscription plan? This action cannot be undone.
           </div>
-          
+
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-800">{error}</p>
@@ -85,7 +83,7 @@ const DeleteStyle = ({ isOpen, onClose, dataId, onDataDelete }) => {
             <div className="flex">
               <AlertTriangle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-yellow-700">
-                <strong>Warning:</strong> This will permanently delete the trading style and cannot be recovered.
+                <strong>Warning:</strong> This will permanently delete the subscription plan and cannot be recovered.
               </div>
             </div>
           </div>
@@ -116,7 +114,7 @@ const DeleteStyle = ({ isOpen, onClose, dataId, onDataDelete }) => {
                 Deleting...
               </div>
             ) : (
-              'Delete Style'
+              'Delete Plan'
             )}
           </button>
         </div>
@@ -125,4 +123,4 @@ const DeleteStyle = ({ isOpen, onClose, dataId, onDataDelete }) => {
   );
 };
 
-export default DeleteStyle;
+export default DeletePlan;

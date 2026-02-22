@@ -11,7 +11,7 @@ import Admin from './pages/admin/Admin';
 import TanantManagement from './pages/TenantManagement/tanantmanagement';
 import UserFeedback from './pages/UserFeedback/UserFeedback';
 import Product from './pages/Product/Product';
-import TreadingStrategies from './pages/treadingStrategies/Strategies';
+import Plan from './pages/paymentPlan/plan';
 import Categories from './pages/category/Categories';
 import Settings from './pages/settings/Settings';
 
@@ -73,10 +73,10 @@ function App() {
                 }
               />
               <Route
-                path="/tradeing-strategies"
+                path="/subscription_plan"
                 element={
                   <ProtectedRoute>
-                    <TreadingStrategies />
+                    <Plan />
                   </ProtectedRoute>
                 }
               />

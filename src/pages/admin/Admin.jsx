@@ -7,14 +7,16 @@ import Table from '../../components/ui/Table';
 import EditUser from './EditAdmin';
 import CreateAdmin from './CreateAdmin';
 import api,{ API_BASE_URL } from '../../services/auth';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  Filter,
+  Edit,
+  Trash2,
   Eye,
-  MoreVertical
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 
@@ -24,6 +26,10 @@ const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // for user edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -74,12 +80,22 @@ const Users = () => {
     fetchUsers();
   }, []);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
+
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || user.status.toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + rowsPerPage);
 
   const getStatusBadge = (status) => {
     const statusStyles = {
@@ -206,7 +222,7 @@ const Users = () => {
                 </Table.Row>
               </Table.Head>
               <Table.Body>
-                {filteredUsers.map((user) => (
+                {paginatedUsers.map((user) => (
                   <Table.Row key={user.id}>
                     <Table.Cell>
                       <div className="flex items-center space-x-3">
@@ -270,6 +286,95 @@ const Users = () => {
           {!loading && filteredUsers.length === 0 && (
             <div className="text-center py-12">
               <div className="text-sm text-gray-500">No users found</div>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && filteredUsers.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 gap-3">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Rows per page:</span>
+                <select
+                  className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    setRowsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+                <span className="ml-2">
+                  {startIndex + 1}–{Math.min(startIndex + rowsPerPage, filteredUsers.length)} of {filteredUsers.length}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 text-sm rounded-md border border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-1 rounded-md border border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                {/* Page numbers */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((page) => {
+                    if (totalPages <= 5) return true;
+                    if (page === 1 || page === totalPages) return true;
+                    return Math.abs(page - currentPage) <= 1;
+                  })
+                  .reduce((acc, page, idx, arr) => {
+                    if (idx > 0 && page - arr[idx - 1] > 1) {
+                      acc.push('ellipsis-' + page);
+                    }
+                    acc.push(page);
+                    return acc;
+                  }, [])
+                  .map((item) =>
+                    typeof item === 'string' ? (
+                      <span key={item} className="px-1 text-gray-400">...</span>
+                    ) : (
+                      <button
+                        key={item}
+                        onClick={() => setCurrentPage(item)}
+                        className={`px-3 py-1 text-sm rounded-md border ${
+                          currentPage === item
+                            ? 'bg-primary-600 text-white border-primary-600'
+                            : 'border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-1 rounded-md border border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 text-sm rounded-md border border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Last
+                </button>
+              </div>
             </div>
           )}
         </Card>

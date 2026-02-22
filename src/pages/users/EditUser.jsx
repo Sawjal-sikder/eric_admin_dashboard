@@ -212,7 +212,7 @@ const EditUser = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true }
               />
             </div>
             
-            <div>
+            {/* <div>
               <label htmlFor="user_type" className="block text-sm font-medium text-gray-700 mb-1">
                 User Type
               </label>
@@ -226,7 +226,7 @@ const EditUser = ({ isOpen, onClose, user, onUserUpdate, useLocalUpdate = true }
                 <option value="individuals">Individuals</option>
                 <option value="company">Company</option>
               </select>
-            </div>
+            </div> */}
             
             <div className="flex items-center">
               <input

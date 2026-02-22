@@ -151,7 +151,7 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Company Users</p>
+                <p className="text-sm font-medium text-gray-600">Total Subscription</p>
                 <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.company_users || 0}</p>
               </div>
             </div>
@@ -165,14 +165,14 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600">Individual Users</p>
+                <p className="text-sm font-medium text-gray-600">Total Generated Videos</p>
                 <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.individual_users || 0}</p>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Bar Chart */}
+        {/* Bar Chart
         <Card className="mb-8">
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
@@ -246,9 +246,9 @@ const Dashboard = () => {
               </div>
             )}
           </div>
-        </Card>
+        </Card> */}
 
-                <Card className="mb-8"> <RuleAnalysis /> </Card>
+                {/* <Card className="mb-8"> <RuleAnalysis /> </Card> */}
 
       </div>
     </Layout>

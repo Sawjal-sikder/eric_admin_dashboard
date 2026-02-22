@@ -45,16 +45,32 @@ export const authService = {
         // Store the access token as the main auth token
         localStorage.setItem('authToken', access);
         localStorage.setItem('refreshToken', refresh);
-        
-        // Create a basic user object (you might want to decode the JWT to get user info)
+
+        // Fetch user profile to verify admin access
+        const profileResponse = await api.get('/user/profile/details/', {
+          headers: { Authorization: `Bearer ${access}` },
+        });
+        const profile = profileResponse.data;
+
+        if (!profile.is_admin) {
+          // Not an admin — clear tokens and reject
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('refreshToken');
+          throw { message: 'Access denied. Only admins can access this panel.', status: 403 };
+        }
+
         const userInfo = {
-          id: '1', // This should be extracted from the JWT token
-          email: credentials.email,
-          // Add other user fields as needed
+          id: profile.id,
+          email: profile.email,
+          full_name: profile.full_name,
+          phone_number: profile.phone_number,
+          profile_image: profile.profile_image,
+          is_admin: profile.is_admin,
+          is_premium: profile.is_premium,
         };
         localStorage.setItem('user', JSON.stringify(userInfo));
       }
-      
+
       return {
         token: access,
         user: JSON.parse(localStorage.getItem('user')),
@@ -62,22 +78,25 @@ export const authService = {
         refresh
       };
     } catch (error) {
+      // Re-throw admin access denial as-is
+      if (error.status === 403) {
+        throw error;
+      }
+
       console.error('Login error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      
-      // Return more detailed error information
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          error.message || 
+
+      const errorMessage = error.response?.data?.message ||
+                          error.response?.data?.error ||
+                          error.message ||
                           'Login failed';
-      
+
       throw { message: errorMessage, status: error.response?.status };
     }
   },
 
   logout: () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   },
 

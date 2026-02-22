@@ -7,32 +7,17 @@ import {
   Package, 
   Folder, 
   TrendingUp,
-  TrendingDown,
-  ArrowUpRight,
-  BarChart3
 } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
-} from 'recharts';
-import RuleAnalysis from './RuleAnalysis';
+
 
 const Dashboard = () => {
   const [data, setData] = useState({
     total_users: 0,
     active_users: 0,
-    individual_users: 0,
-    company_users: 0,
+    total_uploaded_videos: 0,
+    total_generated_videos: 0,
   });
-  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [chartLoading, setChartLoading] = useState(true);
 
   const fetchData = async () => {
     try {
@@ -62,44 +47,9 @@ const Dashboard = () => {
     }
   };
 
-  const fetchChartData = async () => {
-    try {
-      setChartLoading(true);
-      const response = await fetch(`${API_BASE_URL}/dashboard/user-insights/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const result = await response.json();
-      
-      if (result.success && result.user_insights) {
-        // Transform the data for recharts
-        const transformedData = Object.entries(result.user_insights)
-          .map(([month, values]) => ({
-            month: month,
-            individuals: values.individuals,
-            company: values.company,
-          }))
-          .reverse(); // Reverse to show oldest first
-        
-        setChartData(transformedData);
-      }
-    } catch (error) {
-      console.error('Error fetching chart data:', error);
-    } finally {
-      setChartLoading(false);
-    }
-  };
 
   useEffect(() => {
     fetchData();
-    fetchChartData();
   }, []);
 
 
@@ -151,8 +101,8 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Subscription</p>
-                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.company_users || 0}</p>
+                <p className="text-sm font-medium text-gray-600">Total Uploaded videos</p>
+                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.total_uploaded_videos || 0}</p>
               </div>
             </div>
           </Card>
@@ -166,7 +116,7 @@ const Dashboard = () => {
               </div>
               <div className="ml-4 flex-1">
                 <p className="text-sm font-medium text-gray-600">Total Generated Videos</p>
-                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.individual_users || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : data.total_generated_videos || 0}</p>
               </div>
             </div>
           </Card>
